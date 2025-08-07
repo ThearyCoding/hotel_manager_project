@@ -5,21 +5,40 @@
 package final_java;
 
 import final_java.models.HotelManager;
+import final_java.models.HotelManager.IncomeRecord;
+import java.text.DecimalFormat;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
  * @author LONGMENG
  */
 public class IncomePanel extends javax.swing.JPanel {
-    
-           JpanelLoader jpload = new JpanelLoader();
-HotelManager hotelManager;
+    JpanelLoader jpload = new JpanelLoader();
+    HotelManager hotelManager;
 
-    /**
-     * Creates new form Customer
-     */
     public IncomePanel(HotelManager hotelManager) {
+        this.hotelManager = hotelManager;
         initComponents();
+        populateIncomeTable();
+    }
+
+    private void populateIncomeTable() {
+        DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+        model.setRowCount(0); // Clear existing rows
+
+        for (IncomeRecord record : hotelManager.getIncomeRecords()) {
+            model.addRow(new Object[]{
+                record.getCustomerName(),
+                record.getRoomNumber(),
+                record.getRoomType(),
+                String.format("$%.2f", record.getAmount())
+            });
+        }
+
+        double totalIncome = hotelManager.getTotalIncome();
+        DecimalFormat df = new DecimalFormat("$#,##0.00");
+        jLabel8.setText(df.format(totalIncome));
     }
 
     /**

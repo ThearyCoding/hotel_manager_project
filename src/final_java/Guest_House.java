@@ -4,7 +4,9 @@
  */
 package final_java;
 
+import final_java.models.Customer;
 import final_java.models.HotelManager;
+import final_java.models.Room;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
@@ -17,21 +19,39 @@ import javax.swing.Timer;
  */
 public class Guest_House extends javax.swing.JFrame {
 
-   JpanelLoader jpload = new JpanelLoader();
+    JpanelLoader jpload = new JpanelLoader();
     private HotelManager hotelManager;
+
     /**
      * Creates new form NewJFrame
      */
     public Guest_House() {
+        initializeHotelManager();
         initComponents();
-        
+
         //time
         times();
         //date
         dt();
     }
-    
-      //Date
+
+    private void initializeHotelManager() {
+        hotelManager = HotelManager.getInstance();
+        // Initialize sample rooms and customers for testing
+        // Remove or adjust if users add all data via RoomPanel/CustomerPanel
+        try {
+            hotelManager.addCustomer(new Customer("C001", "John Doe", "john@example.com", "1234567890"));
+            hotelManager.addCustomer(new Customer("C002", "Jane Smith", "jane@example.com", "0987654321"));
+            hotelManager.addRoom(new Room("101", "Single", 50.0, true));
+            hotelManager.addRoom(new Room("102", "Double", 80.0, true));
+            hotelManager.addRoom(new Room("103", "Suite", 120.0, true));
+            System.out.println("Initialized " + hotelManager.getRooms().size() + " rooms in HotelManager");
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error initializing data: " + e.getMessage());
+        }
+    }
+
+    //Date
     public void dt() {
         Date d = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MMMM-dd");
@@ -500,37 +520,37 @@ public class Guest_House extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnroomActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnroomActionPerformed
-               RoomPanel rm = new RoomPanel(hotelManager);
+        RoomPanel rm = new RoomPanel(hotelManager);
         jpload.jPanelLoader(panel_load, rm);
-        
+
     }//GEN-LAST:event_btnroomActionPerformed
 
     private void btncustomerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btncustomerActionPerformed
-         CustomerPanel cus = new CustomerPanel(hotelManager);
+        CustomerPanel cus = new CustomerPanel(hotelManager);
         jpload.jPanelLoader(panel_load, cus);
-       
+
     }//GEN-LAST:event_btncustomerActionPerformed
 
     private void btncheckinActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btncheckinActionPerformed
         CheckInPanel chkin = new CheckInPanel(hotelManager);
         jpload.jPanelLoader(panel_load, chkin);
-        
+
     }//GEN-LAST:event_btncheckinActionPerformed
 
     private void btncheckoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btncheckoutActionPerformed
-                CheckOutPanel chkout = new CheckOutPanel(hotelManager);
+        CheckOutPanel chkout = new CheckOutPanel(hotelManager);
         jpload.jPanelLoader(panel_load, chkout);
-       
+
     }//GEN-LAST:event_btncheckoutActionPerformed
 
     private void btnaboutusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnaboutusActionPerformed
         About_Us abu = new About_Us(hotelManager);
         jpload.jPanelLoader(panel_load, abu);
-        
+
     }//GEN-LAST:event_btnaboutusActionPerformed
 
     private void btnbookingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnbookingActionPerformed
-       BookingPanel bk = new BookingPanel(hotelManager);
+        BookingPanel bk = new BookingPanel(hotelManager);
         jpload.jPanelLoader(panel_load, bk);
 
     }//GEN-LAST:event_btnbookingActionPerformed
@@ -542,7 +562,7 @@ public class Guest_House extends javax.swing.JFrame {
     }//GEN-LAST:event_jLabel1MouseClicked
 
     private void btnincomeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnincomeActionPerformed
-                IncomePanel inc = new IncomePanel(hotelManager);
+        IncomePanel inc = new IncomePanel(hotelManager);
         jpload.jPanelLoader(panel_load, inc);
     }//GEN-LAST:event_btnincomeActionPerformed
 

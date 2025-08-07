@@ -8,15 +8,17 @@ import java.util.Objects;
 
 public class Room {
     private String roomNumber;
-    private String type; // e.g., Single, Double
+    private String type;
     private boolean isAvailable;
     private double price;
+  
 
-    public Room(String roomNumber, String type, double price) {
+    public Room(String roomNumber, String type, double price,boolean isAvailable) {
         this.roomNumber = roomNumber;
         this.type = type;
-        this.isAvailable = true;
+        this.isAvailable = isAvailable;
         this.price = price;
+        
     }
 
     // Getters and setters

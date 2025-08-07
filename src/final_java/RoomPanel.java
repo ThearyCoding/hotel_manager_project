@@ -4,22 +4,80 @@
  */
 package final_java;
 
+import final_java.models.Booking;
 import final_java.models.HotelManager;
+import final_java.models.Room;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
  * @author LONGMENG
  */
 public class RoomPanel extends javax.swing.JPanel {
-    
-           JpanelLoader jpload = new JpanelLoader();
-HotelManager hotelManager;
 
-    /**
-     * Creates new form Customer
-     */
-    public RoomPanel(HotelManager hotelManager) {
+    private JpanelLoader jpload = new JpanelLoader();
+    private DefaultTableModel model;
+    private HotelManager hotelManager;
+
+    public RoomPanel(HotelManager hotelManager1) {
         initComponents();
+        hotelManager = HotelManager.getInstance();
+
+        model = new DefaultTableModel(new Object[]{"Room Number", "Room Type", "Status", "Price"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        jTable1.setModel(model);
+        jTable1.setRowHeight(40);
+        dtfilter.addPropertyChangeListener("date", evt -> {
+            LocalDate selectedDate = dtfilter.getDate() != null
+                    ? dtfilter.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                    : null;
+            refreshRoomTable(selectedDate);
+        });
+        refreshRoomTable(null);
+    }
+
+    private void clearForm() {
+        txtprice.setText("");
+        cboType.setSelectedIndex(0);
+    }
+
+    public void refreshRoomTable(LocalDate filterDate) {
+        model.setRowCount(0); // Clear table
+        List<Room> roomsToDisplay = new ArrayList<>(hotelManager.getRooms());
+
+        // Show message if no rooms exist
+        if (roomsToDisplay.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No rooms available to display.",
+                    "No Rooms", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Use today's date if no filter date is provided
+        LocalDate dateToCheck = (filterDate != null) ? filterDate : LocalDate.now();
+
+        for (Room room : roomsToDisplay) {
+            String status = "Available";
+            Booking booking = hotelManager.findBookingByRoom(room, dateToCheck);
+            if (booking != null) {
+                status = booking.isCheckedIn() ? "Unavailable" : "Booked";
+            }
+            System.out.println("Room: " + room.getRoomNumber() + ", Date: " + dateToCheck + ", Status: " + status);
+            model.addRow(new Object[]{
+                room.getRoomNumber(),
+                room.getType(),
+                status,
+                room.getPrice()
+            });
+        }
     }
 
     /**
@@ -39,16 +97,19 @@ HotelManager hotelManager;
         jLabel1 = new javax.swing.JLabel();
         jSeparator2 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
-        jTextField1 = new javax.swing.JTextField();
+        txtprice = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
-        jComboBox1 = new javax.swing.JComboBox<>();
+        btnadd = new javax.swing.JButton();
+        cboType = new javax.swing.JComboBox<>();
+        txtnumber = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         jLabel5 = new javax.swing.JLabel();
         jSeparator3 = new javax.swing.JSeparator();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
+        dtfilter = new com.toedter.calendar.JDateChooser();
         jPanel3 = new javax.swing.JPanel();
         jSeparator1 = new javax.swing.JSeparator();
         jLabel3 = new javax.swing.JLabel();
@@ -105,35 +166,44 @@ HotelManager hotelManager;
         jLabel2.setFont(new java.awt.Font("Century Gothic", 1, 22)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(102, 102, 102));
         jLabel2.setText("Room Number:");
-        jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 100, 170, 45));
+        jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 80, 170, 45));
 
-        jTextField1.setFont(new java.awt.Font("Segoe UI", 0, 20)); // NOI18N
-        jTextField1.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        jPanel1.add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 151, 500, 57));
+        txtprice.setFont(new java.awt.Font("Segoe UI", 0, 20)); // NOI18N
+        txtprice.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jPanel1.add(txtprice, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 210, 500, 40));
 
         jLabel4.setFont(new java.awt.Font("Century Gothic", 1, 22)); // NOI18N
         jLabel4.setForeground(new java.awt.Color(102, 102, 102));
-        jLabel4.setText("Room Type:");
-        jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 220, -1, 45));
+        jLabel4.setText("Room Price:");
+        jPanel1.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 170, -1, 45));
 
-        jButton1.setBackground(new java.awt.Color(0, 204, 0));
-        jButton1.setFont(new java.awt.Font("Century Gothic", 1, 18)); // NOI18N
-        jButton1.setForeground(new java.awt.Color(255, 255, 255));
-        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/final_java/icon/add customer_1.png"))); // NOI18N
-        jButton1.setText("Add Room");
-        jButton1.setBorder(null);
-        jButton1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        btnadd.setBackground(new java.awt.Color(0, 204, 0));
+        btnadd.setFont(new java.awt.Font("Century Gothic", 1, 18)); // NOI18N
+        btnadd.setForeground(new java.awt.Color(255, 255, 255));
+        btnadd.setIcon(new javax.swing.ImageIcon(getClass().getResource("/final_java/icon/add customer_1.png"))); // NOI18N
+        btnadd.setText("Add Room");
+        btnadd.setBorder(null);
+        btnadd.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnadd.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                btnaddActionPerformed(evt);
             }
         });
-        jPanel1.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 346, 510, 59));
+        jPanel1.add(btnadd, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 360, 510, 50));
 
-        jComboBox1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Single", "Double", " " }));
-        jComboBox1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        jPanel1.add(jComboBox1, new org.netbeans.lib.awtextra.AbsoluteConstraints(21, 270, 500, 57));
+        cboType.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        cboType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Single", "Double", " " }));
+        cboType.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jPanel1.add(cboType, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 300, 500, 57));
+
+        txtnumber.setFont(new java.awt.Font("Segoe UI", 0, 20)); // NOI18N
+        txtnumber.setBorder(javax.swing.BorderFactory.createEtchedBorder());
+        jPanel1.add(txtnumber, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 500, 50));
+
+        jLabel6.setFont(new java.awt.Font("Century Gothic", 1, 22)); // NOI18N
+        jLabel6.setForeground(new java.awt.Color(102, 102, 102));
+        jLabel6.setText("Room Type:");
+        jPanel1.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 250, -1, 45));
 
         panel_load.add(jPanel1);
         jPanel1.setBounds(16, 160, 540, 420);
@@ -159,20 +229,20 @@ HotelManager hotelManager;
         jLabel5.setFont(new java.awt.Font("Century Gothic", 0, 32)); // NOI18N
         jLabel5.setForeground(new java.awt.Color(51, 51, 51));
         jLabel5.setText("Current Rooms");
-        jPanel2.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(17, 14, 340, 55));
+        jPanel2.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 20, 340, 55));
         jPanel2.add(jSeparator3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 70, 550, 10));
 
         jTable1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         jTable1.setForeground(new java.awt.Color(153, 153, 153));
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {"", "", null, "YYYY/mm/dd"},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
+                {"", "", null, "YYYY/mm/dd", null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
             },
             new String [] {
-                "Room Number", "Room Type", "Status", "Check-In Date"
+                "Room Number", "Room Type", "Status", "Check-In Date", "Price"
             }
         ));
         jTable1.setCursor(new java.awt.Cursor(java.awt.Cursor.MOVE_CURSOR));
@@ -181,6 +251,7 @@ HotelManager hotelManager;
         jScrollPane1.setViewportView(jTable1);
 
         jPanel2.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 90, 550, 310));
+        jPanel2.add(dtfilter, new org.netbeans.lib.awtextra.AbsoluteConstraints(260, 30, 310, 40));
 
         panel_load.add(jPanel2);
         jPanel2.setBounds(580, 160, 590, 420);
@@ -467,9 +538,30 @@ HotelManager hotelManager;
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1ActionPerformed
+    private void btnaddActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnaddActionPerformed
+        try {
+            String roomNumber = txtnumber.getText().trim();
+            String roomType = cboType.getSelectedItem().toString();
+            double price = Double.parseDouble(txtprice.getText());
+
+            // Validate inputs
+            if (roomNumber.isEmpty() || roomType.isEmpty()) {
+                throw new IllegalArgumentException("Room number and type are required.");
+            }
+            if (!roomNumber.matches("\\d+")) {
+                throw new IllegalArgumentException("Room number must contain only digits.");
+            }
+
+            // Create and add room
+            Room room = new Room(roomNumber, roomType, price, true);
+            hotelManager.addRoom(room);
+            refreshRoomTable(null);
+            clearForm();
+            JOptionPane.showMessageDialog(this, "Room added successfully!");
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Add Room Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_btnaddActionPerformed
 
     private void jLabel19MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel19MouseClicked
         // TODO add your handling code here:
@@ -509,8 +601,9 @@ HotelManager hotelManager;
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JComboBox<String> jComboBox1;
+    private javax.swing.JButton btnadd;
+    private javax.swing.JComboBox<String> cboType;
+    private com.toedter.calendar.JDateChooser dtfilter;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -527,6 +620,7 @@ HotelManager hotelManager;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel10;
@@ -547,7 +641,8 @@ HotelManager hotelManager;
     private javax.swing.JSeparator jSeparator3;
     private com.toedter.components.JSpinField jSpinField1;
     private javax.swing.JTable jTable1;
-    private javax.swing.JTextField jTextField1;
     private javax.swing.JPanel panel_load;
+    private javax.swing.JTextField txtnumber;
+    private javax.swing.JTextField txtprice;
     // End of variables declaration//GEN-END:variables
 }

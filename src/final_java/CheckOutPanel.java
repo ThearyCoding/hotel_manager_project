@@ -4,7 +4,13 @@
  */
 package final_java;
 
+import final_java.models.Booking;
 import final_java.models.HotelManager;
+import final_java.models.Room;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -12,13 +18,32 @@ import final_java.models.HotelManager;
  */
 public class CheckOutPanel extends javax.swing.JPanel {
 
-               JpanelLoader jpload = new JpanelLoader();
-HotelManager hotelManager;
-    /**
-     * Creates new form Customer
-     */
+    JpanelLoader jpload = new JpanelLoader();
+    HotelManager hotelManager;
+
     public CheckOutPanel(HotelManager hotelManager) {
+        this.hotelManager = hotelManager;
         initComponents();
+        populateOccupiedRooms();
+    }
+
+    private void populateOccupiedRooms() {
+        DefaultComboBoxModel<String> comboModel = new DefaultComboBoxModel<>();
+        comboModel.addElement("-- Select Room --");
+        LocalDate today = LocalDate.now();
+        for (Booking booking : hotelManager.getBookings()) {
+            if (booking.isCheckedIn() && !today.isBefore(booking.getStartDate())
+                    && !today.isAfter(booking.getEndDate())) {
+                comboModel.addElement(booking.getRoom().getRoomNumber());
+            }
+        }
+        jComboBox2.setModel(comboModel);
+    }
+
+    private void clearGuestInfo() {
+        jTextField3.setText("");
+        jTextField5.setText("");
+        jTextField4.setText("");
     }
 
     /**
@@ -347,6 +372,11 @@ HotelManager hotelManager;
         jButton1.setText("Complete Check Out");
         jButton1.setBorder(null);
         jButton1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
         jPanel1.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 420, 1090, 60));
 
         jComboBox2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
@@ -738,7 +768,29 @@ HotelManager hotelManager;
     }// </editor-fold>//GEN-END:initComponents
 
     private void jComboBox2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox2ActionPerformed
-        // TODO add your handling code here:
+        String selectedRoom = (String) jComboBox2.getSelectedItem();
+        if (selectedRoom == null || selectedRoom.equals("-- Select Room --")) {
+            clearGuestInfo();
+            return;
+        }
+
+        Room room = hotelManager.getRooms().stream()
+                .filter(r -> r.getRoomNumber().equals(selectedRoom))
+                .findFirst()
+                .orElse(null);
+        if (room == null) {
+            clearGuestInfo();
+            return;
+        }
+
+        Booking booking = hotelManager.findBookingByRoom(room, LocalDate.now());
+        if (booking != null && booking.isCheckedIn()) {
+            jTextField3.setText(booking.getCustomer().getName());
+            jTextField5.setText(booking.getRoom().getRoomNumber());
+            jTextField4.setText(booking.getStartDate().toString());
+        } else {
+            clearGuestInfo();
+        }
     }//GEN-LAST:event_jComboBox2ActionPerformed
 
     private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField3ActionPerformed
@@ -816,6 +868,51 @@ HotelManager hotelManager;
         IncomePanel inc = new IncomePanel(hotelManager);
         jpload.jPanelLoader(panel_load, inc);
     }//GEN-LAST:event_jLabel32MouseClicked
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        String selectedRoom = (String) jComboBox2.getSelectedItem();
+        if (selectedRoom == null || selectedRoom.equals("-- Select Room --")) {
+            JOptionPane.showMessageDialog(this, "Please select a room to check out.",
+                    "Invalid Selection", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Room room = hotelManager.getRooms().stream()
+                .filter(r -> r.getRoomNumber().equals(selectedRoom))
+                .findFirst()
+                .orElse(null);
+        if (room == null) {
+            JOptionPane.showMessageDialog(this, "Room not found.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Booking booking = hotelManager.findBookingByRoom(room, LocalDate.now());
+        if (booking == null || !booking.isCheckedIn()) {
+            JOptionPane.showMessageDialog(this, "No active check-in found for this room.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            long nights = ChronoUnit.DAYS.between(booking.getStartDate(), LocalDate.now());
+            if (nights < 1) {
+                nights = 1;
+            }
+            double income = room.getPrice() * nights;
+
+            hotelManager.checkOutBooking(booking);
+            hotelManager.addIncome(booking, income); // Updated to pass booking
+
+            populateOccupiedRooms();
+            clearGuestInfo();
+            JOptionPane.showMessageDialog(this, "Check-out completed successfully! Income: $" + income,
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Error during check-out: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_jButton1ActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
