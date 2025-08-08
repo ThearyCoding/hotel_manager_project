@@ -21,20 +21,18 @@ import javax.swing.JOptionPane;
  */
 public class CheckInPanel extends javax.swing.JPanel {
 
-    private JpanelLoader jpload = new JpanelLoader();
+      private JpanelLoader jpload = new JpanelLoader();
     private HotelManager hotelManager;
-    private RoomPanel roomPanel; // Reference to RoomPanel
 
     public CheckInPanel(HotelManager hotelManager) {
         if (hotelManager == null) {
             throw new IllegalArgumentException("HotelManager cannot be null");
         }
         this.hotelManager = hotelManager;
-        this.roomPanel = roomPanel; // Store RoomPanel reference
         initComponents();
         populateCustomerComboBox();
-        jDateChooser3.setDate(new Date()); // Today
-        jDateChooser2.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(1))); // Tomorrow
+        dtCheckIn.setDate(new Date()); // Today
+        dtCheckOut.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(1))); // Tomorrow
         updateRoomComboBox();
         addDateChangeListeners();
         System.out.println("CheckInPanel initialized with " + hotelManager.getRooms().size() + " rooms");
@@ -57,15 +55,14 @@ public class CheckInPanel extends javax.swing.JPanel {
 
     private void updateRoomComboBox() {
         cboroom.removeAllItems();
-        cboroom.addItem("Select Room");
-        LocalDate startDate = jDateChooser3.getDate() != null
-                ? jDateChooser3.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-        LocalDate endDate = jDateChooser2.getDate() != null
-                ? jDateChooser2.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+        cboroom.addItem("-- Select Room --");
+        LocalDate startDate = dtCheckIn.getDate() != null
+                ? dtCheckIn.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+        LocalDate endDate = dtCheckOut.getDate() != null
+                ? dtCheckOut.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
 
         List<Room> roomsToDisplay;
         if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
-            // Show all rooms if dates are invalid
             roomsToDisplay = hotelManager.getRooms();
             if (!roomsToDisplay.isEmpty()) {
                 cboroom.addItem("Select valid dates to check availability");
@@ -100,8 +97,8 @@ public class CheckInPanel extends javax.swing.JPanel {
                 updateRoomComboBox();
             }
         };
-        jDateChooser3.addPropertyChangeListener(dateListener);
-        jDateChooser2.addPropertyChangeListener(dateListener);
+        dtCheckIn.addPropertyChangeListener(dateListener);
+        dtCheckOut.addPropertyChangeListener(dateListener);
     }
 
     /**
@@ -124,8 +121,8 @@ public class CheckInPanel extends javax.swing.JPanel {
         jLabel6 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
         cbxcustomer = new javax.swing.JComboBox<>();
-        jDateChooser2 = new com.toedter.calendar.JDateChooser();
-        jDateChooser3 = new com.toedter.calendar.JDateChooser();
+        dtCheckOut = new com.toedter.calendar.JDateChooser();
+        dtCheckIn = new com.toedter.calendar.JDateChooser();
         jLabel8 = new javax.swing.JLabel();
         cboroom = new javax.swing.JComboBox<>();
         jPanel3 = new javax.swing.JPanel();
@@ -216,10 +213,10 @@ public class CheckInPanel extends javax.swing.JPanel {
             }
         });
         jPanel1.add(cbxcustomer, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 1090, 40));
-        jPanel1.add(jDateChooser2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 360, 430, 40));
+        jPanel1.add(dtCheckOut, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 360, 430, 40));
 
-        jDateChooser3.setEnabled(false);
-        jPanel1.add(jDateChooser3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 280, 1090, 40));
+        dtCheckIn.setEnabled(false);
+        jPanel1.add(dtCheckIn, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 280, 1090, 40));
 
         jLabel8.setFont(new java.awt.Font("Century Gothic", 1, 20)); // NOI18N
         jLabel8.setForeground(new java.awt.Color(102, 102, 102));
@@ -535,11 +532,13 @@ public class CheckInPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_cbxcustomerActionPerformed
 
     private void btncheckInActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btncheckInActionPerformed
-        try {
+         try {
             // Get selected customer
             String customerSelection = (String) cbxcustomer.getSelectedItem();
             if (customerSelection == null || customerSelection.equals("Select Customer")) {
-                throw new IllegalArgumentException("Please select a customer.");
+                JOptionPane.showMessageDialog(this, "Please select a customer.",
+                        "Invalid Selection", JOptionPane.WARNING_MESSAGE);
+                return;
             }
             String customerId = customerSelection.split(" - ")[0];
             Customer customer = hotelManager.getCustomers().stream()
@@ -548,52 +547,56 @@ public class CheckInPanel extends javax.swing.JPanel {
                     .orElseThrow(() -> new IllegalArgumentException("Customer not found."));
 
             // Get selected room
-            String roomSelection = (String) cboroom.getSelectedItem();
-            if (roomSelection == null || roomSelection.equals("Select Room") || roomSelection.equals("Select valid dates to check availability")) {
-                throw new IllegalArgumentException("Please select a room.");
+            String selectedRoom = (String) cboroom.getSelectedItem();
+            if (selectedRoom == null || selectedRoom.equals("-- Select Room --") || selectedRoom.equals("Select valid dates to check availability")) {
+                JOptionPane.showMessageDialog(this, "Please select a valid room.",
+                        "Invalid Selection", JOptionPane.WARNING_MESSAGE);
+                return;
             }
-            String roomNumber = roomSelection.split(" - ")[0];
+            String roomNumber = selectedRoom.split(" - ")[0];
             Room room = hotelManager.getRooms().stream()
                     .filter(r -> r.getRoomNumber().equals(roomNumber))
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Room not found."));
 
             // Get dates
-            LocalDate startDate = jDateChooser3.getDate() != null
-                    ? jDateChooser3.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-            LocalDate endDate = jDateChooser2.getDate() != null
-                    ? jDateChooser2.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+            LocalDate startDate = dtCheckIn.getDate() != null
+                    ? dtCheckIn.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+            LocalDate endDate = dtCheckOut.getDate() != null
+                    ? dtCheckOut.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
             if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
-                throw new IllegalArgumentException("Invalid check-in or check-out date.");
+                JOptionPane.showMessageDialog(this, "Invalid check-in or check-out date.",
+                        "Invalid Dates", JOptionPane.WARNING_MESSAGE);
+                return;
             }
-            if (!startDate.isEqual(LocalDate.now()) && startDate.isBefore(LocalDate.now())) {
-                throw new IllegalArgumentException("Check-in date must be today or in the future.");
+            if (startDate.isBefore(LocalDate.now())) {
+                JOptionPane.showMessageDialog(this, "Check-in date must be today or in the future.",
+                        "Invalid Date", JOptionPane.WARNING_MESSAGE);
+                return;
             }
 
-            // Verify room availability for selected dates
+            // Verify room availability
             if (!hotelManager.getAvailableRooms(startDate, endDate).contains(room)) {
-                throw new IllegalArgumentException("Selected room is not available for the chosen dates.");
+                JOptionPane.showMessageDialog(this, "Selected room is not available for the chosen dates.",
+                        "Room Unavailable", JOptionPane.WARNING_MESSAGE);
+                return;
             }
 
-            // Create booking (no deposit for immediate check-in)
-            String bookingId = "B" + (hotelManager.getBookings().size() + 1);
-            Booking booking = new Booking(bookingId, customer, room, startDate, endDate, 0.0);
-            booking.setCheckedIn(true); // Set checkedIn to true for immediate check-in
-            hotelManager.addBooking(booking);
+            // Create a new booking for check-in (no deposit)
+            Booking booking = hotelManager.createCheckInBooking(customer, room, startDate, endDate);
 
-            JOptionPane.showMessageDialog(this, "Check-in completed successfully! Booking ID: " + bookingId);
-            populateCustomerComboBox();
+            JOptionPane.showMessageDialog(this, "Check-in completed successfully! Booking ID: " + booking.getId(),
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
             updateRoomComboBox();
-            jDateChooser2.setDate(null);
-            jDateChooser3.setDate(null);
+            populateCustomerComboBox();
 
-            // Refresh RoomPanel table
-            if (roomPanel != null) {
-                roomPanel.refreshRoomTable(null);
-            }
+            // Navigate to RoomPanel or IncomePanel (optional)
+            IncomePanel inc = new IncomePanel(hotelManager);
+            jpload.jPanelLoader(panel_load, inc);
 
         } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Check-In Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(),
+                    "Check-In Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_btncheckInActionPerformed
 
@@ -645,8 +648,8 @@ public class CheckInPanel extends javax.swing.JPanel {
     private javax.swing.JButton btncheckIn;
     private javax.swing.JComboBox<String> cboroom;
     private javax.swing.JComboBox<String> cbxcustomer;
-    private com.toedter.calendar.JDateChooser jDateChooser2;
-    private com.toedter.calendar.JDateChooser jDateChooser3;
+    private com.toedter.calendar.JDateChooser dtCheckIn;
+    private com.toedter.calendar.JDateChooser dtCheckOut;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;

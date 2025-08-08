@@ -17,11 +17,13 @@ import javax.swing.JOptionPane;
  * @author LONGMENG
  */
 public class CheckOutPanel extends javax.swing.JPanel {
-
-    JpanelLoader jpload = new JpanelLoader();
+JpanelLoader jpload = new JpanelLoader();
     HotelManager hotelManager;
 
     public CheckOutPanel(HotelManager hotelManager) {
+        if (hotelManager == null) {
+            throw new IllegalArgumentException("HotelManager cannot be null");
+        }
         this.hotelManager = hotelManager;
         initComponents();
         populateOccupiedRooms();
@@ -30,14 +32,10 @@ public class CheckOutPanel extends javax.swing.JPanel {
     private void populateOccupiedRooms() {
         DefaultComboBoxModel<String> comboModel = new DefaultComboBoxModel<>();
         comboModel.addElement("-- Select Room --");
-        LocalDate today = LocalDate.now();
         for (Booking booking : hotelManager.getBookings()) {
-            if (booking.isCheckedIn() && !today.isBefore(booking.getStartDate())
-                    && !today.isAfter(booking.getEndDate())) {
-                comboModel.addElement(booking.getRoom().getRoomNumber());
-            }
+            comboModel.addElement(booking.getRoom().getRoomNumber());
         }
-        jComboBox2.setModel(comboModel);
+        cboRoom.setModel(comboModel);
     }
 
     private void clearGuestInfo() {
@@ -80,8 +78,8 @@ public class CheckOutPanel extends javax.swing.JPanel {
         jLabel1 = new javax.swing.JLabel();
         jSeparator2 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
-        jComboBox2 = new javax.swing.JComboBox<>();
+        btnCheckOut = new javax.swing.JButton();
+        cboRoom = new javax.swing.JComboBox<>();
         jPanel2 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         jLabel4 = new javax.swing.JLabel();
@@ -365,28 +363,28 @@ public class CheckOutPanel extends javax.swing.JPanel {
         jLabel2.setText("Select Occupied Room");
         jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 80, 240, 40));
 
-        jButton1.setBackground(new java.awt.Color(0, 204, 0));
-        jButton1.setFont(new java.awt.Font("Century Gothic", 1, 18)); // NOI18N
-        jButton1.setForeground(new java.awt.Color(255, 255, 255));
-        jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/final_java/icon/complete check out.png"))); // NOI18N
-        jButton1.setText("Complete Check Out");
-        jButton1.setBorder(null);
-        jButton1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        btnCheckOut.setBackground(new java.awt.Color(0, 204, 0));
+        btnCheckOut.setFont(new java.awt.Font("Century Gothic", 1, 18)); // NOI18N
+        btnCheckOut.setForeground(new java.awt.Color(255, 255, 255));
+        btnCheckOut.setIcon(new javax.swing.ImageIcon(getClass().getResource("/final_java/icon/complete check out.png"))); // NOI18N
+        btnCheckOut.setText("Complete Check Out");
+        btnCheckOut.setBorder(null);
+        btnCheckOut.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnCheckOut.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                btnCheckOutActionPerformed(evt);
             }
         });
-        jPanel1.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 420, 1090, 60));
+        jPanel1.add(btnCheckOut, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 420, 1090, 60));
 
-        jComboBox2.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        jComboBox2.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
-        jComboBox2.addActionListener(new java.awt.event.ActionListener() {
+        cboRoom.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        cboRoom.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        cboRoom.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jComboBox2ActionPerformed(evt);
+                cboRoomActionPerformed(evt);
             }
         });
-        jPanel1.add(jComboBox2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 1090, 40));
+        jPanel1.add(cboRoom, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 120, 1090, 40));
 
         jPanel2.setBackground(new java.awt.Color(204, 255, 255));
 
@@ -767,8 +765,8 @@ public class CheckOutPanel extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jComboBox2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox2ActionPerformed
-        String selectedRoom = (String) jComboBox2.getSelectedItem();
+    private void cboRoomActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cboRoomActionPerformed
+        String selectedRoom = (String) cboRoom.getSelectedItem();
         if (selectedRoom == null || selectedRoom.equals("-- Select Room --")) {
             clearGuestInfo();
             return;
@@ -783,15 +781,17 @@ public class CheckOutPanel extends javax.swing.JPanel {
             return;
         }
 
-        Booking booking = hotelManager.findBookingByRoom(room, LocalDate.now());
-        if (booking != null && booking.isCheckedIn()) {
+        Booking booking = hotelManager.findBookingByRoom(room);
+        if (booking != null) {
             jTextField3.setText(booking.getCustomer().getName());
             jTextField5.setText(booking.getRoom().getRoomNumber());
             jTextField4.setText(booking.getStartDate().toString());
         } else {
             clearGuestInfo();
+            JOptionPane.showMessageDialog(this, "No active booking found for this room.",
+                    "No Booking", JOptionPane.WARNING_MESSAGE);
         }
-    }//GEN-LAST:event_jComboBox2ActionPerformed
+    }//GEN-LAST:event_cboRoomActionPerformed
 
     private void jTextField3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField3ActionPerformed
         // TODO add your handling code here:
@@ -869,8 +869,8 @@ public class CheckOutPanel extends javax.swing.JPanel {
         jpload.jPanelLoader(panel_load, inc);
     }//GEN-LAST:event_jLabel32MouseClicked
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        String selectedRoom = (String) jComboBox2.getSelectedItem();
+    private void btnCheckOutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCheckOutActionPerformed
+ String selectedRoom = (String) cboRoom.getSelectedItem();
         if (selectedRoom == null || selectedRoom.equals("-- Select Room --")) {
             JOptionPane.showMessageDialog(this, "Please select a room to check out.",
                     "Invalid Selection", JOptionPane.WARNING_MESSAGE);
@@ -887,37 +887,64 @@ public class CheckOutPanel extends javax.swing.JPanel {
             return;
         }
 
-        Booking booking = hotelManager.findBookingByRoom(room, LocalDate.now());
-        if (booking == null || !booking.isCheckedIn()) {
-            JOptionPane.showMessageDialog(this, "No active check-in found for this room.",
+        Booking booking = hotelManager.findBookingByRoom(room);
+        if (booking == null) {
+            JOptionPane.showMessageDialog(this, "No booking found for this room.",
                     "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         try {
-            long nights = ChronoUnit.DAYS.between(booking.getStartDate(), LocalDate.now());
+            // Calculate stay duration
+            LocalDate today = LocalDate.now();
+            LocalDate endDate = booking.getEndDate().isBefore(today) ? booking.getEndDate() : today;
+            long nights = ChronoUnit.DAYS.between(booking.getStartDate(), endDate);
             if (nights < 1) {
-                nights = 1;
+                nights = 1; // Minimum 1 night
             }
-            double income = room.getPrice() * nights;
 
-            hotelManager.checkOutBooking(booking);
-            hotelManager.addIncome(booking, income); // Updated to pass booking
+            // Calculate total cost
+            double totalCost = room.getPrice() * nights;
+            double deposit = booking.getDeposit();
+            if (deposit <= 0) {
+                JOptionPane.showMessageDialog(this, "No deposit found for this booking.",
+                        "Warning", JOptionPane.WARNING_MESSAGE);
+                deposit = 0;
+            }
+            double remainingPayment = totalCost - deposit;
+            if (remainingPayment < 0) {
+                JOptionPane.showMessageDialog(this, "Deposit exceeds total cost. Please review booking.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
+            // Perform check-out
+            hotelManager.checkOutBooking(booking, totalCost);
+
+            // Update UI
             populateOccupiedRooms();
             clearGuestInfo();
-            JOptionPane.showMessageDialog(this, "Check-out completed successfully! Income: $" + income,
+            JOptionPane.showMessageDialog(this,
+                    "Check-out completed successfully!\n" +
+                    "Total Cost: $" + String.format("%.2f", totalCost) + "\n" +
+                    "Deposit Paid: $" + String.format("%.2f", deposit) + "\n" +
+                    "Remaining Payment: $" + String.format("%.2f", remainingPayment),
                     "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            // Navigate to IncomePanel
+            IncomePanel inc = new IncomePanel(hotelManager);
+            jpload.jPanelLoader(panel_load, inc);
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error during check-out: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_btnCheckOutActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
-    private javax.swing.JComboBox<String> jComboBox2;
+    private javax.swing.JButton btnCheckOut;
+    private javax.swing.JComboBox<String> cboRoom;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;

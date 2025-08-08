@@ -40,8 +40,8 @@ public class Guest_House extends javax.swing.JFrame {
         // Initialize sample rooms and customers for testing
         // Remove or adjust if users add all data via RoomPanel/CustomerPanel
         try {
-            hotelManager.addCustomer(new Customer("C001", "John Doe", "john@example.com", "1234567890"));
-            hotelManager.addCustomer(new Customer("C002", "Jane Smith", "jane@example.com", "0987654321"));
+            hotelManager.addCustomer(new Customer("C001", "John Doe", "Female", "1234567890"));
+            hotelManager.addCustomer(new Customer("C002", "Jane Smith", "Male", "0987654321"));
             hotelManager.addRoom(new Room("101", "Single", 50.0, true));
             hotelManager.addRoom(new Room("102", "Double", 80.0, true));
             hotelManager.addRoom(new Room("103", "Suite", 120.0, true));

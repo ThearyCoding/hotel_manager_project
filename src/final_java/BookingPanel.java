@@ -31,16 +31,18 @@ public class BookingPanel extends javax.swing.JPanel {
             throw new IllegalArgumentException("HotelManager cannot be null");
         }
         this.hotelManager = hotelManager;
-        this.roomPanel = roomPanel; // Store RoomPanel reference
+        this.roomPanel = roomPanel; // Note: roomPanel is null unless passed; consider initializing if needed
         initComponents();
         populateCustomerComboBox();
         // Set default dates to tomorrow and two days from now
-        dtbooking.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(1)));
-        dtcheckout.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(2)));
+        dtCheckIn.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(1)));
+        dtCheckOut.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(2)));
         updateRoomComboBox();
         initializeBookingTable();
         refreshBookingTable();
         addDateChangeListeners();
+        addRoomChangeListener();
+        updateDepositAmount(); // Initial deposit calculation
         System.out.println("BookingPanel initialized with " + hotelManager.getRooms().size() + " rooms");
         for (Room room : hotelManager.getRooms()) {
             System.out.println("Room: " + room.getRoomNumber() + " - " + room.getType() + " ($" + room.getPrice() + ")");
@@ -62,10 +64,10 @@ public class BookingPanel extends javax.swing.JPanel {
     private void updateRoomComboBox() {
         cboroom.removeAllItems();
         cboroom.addItem("Select Room");
-        LocalDate startDate = dtbooking.getDate() != null
-                ? dtbooking.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-        LocalDate endDate = dtcheckout.getDate() != null
-                ? dtcheckout.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+        LocalDate startDate = dtCheckIn.getDate() != null
+                ? dtCheckIn.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+        LocalDate endDate = dtCheckOut.getDate() != null
+                ? dtCheckOut.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
 
         List<Room> roomsToDisplay;
         if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
@@ -95,20 +97,64 @@ public class BookingPanel extends javax.swing.JPanel {
                     "No rooms exist. Please add rooms via Room panel.",
                     "No Rooms", JOptionPane.WARNING_MESSAGE);
         }
+        updateDepositAmount(); // Update deposit after room list changes
     }
 
     private void addDateChangeListeners() {
         PropertyChangeListener dateListener = evt -> {
             if ("date".equals(evt.getPropertyName())) {
                 updateRoomComboBox();
+                updateDepositAmount();
             }
         };
-        dtbooking.addPropertyChangeListener(dateListener);
-        dtcheckout.addPropertyChangeListener(dateListener);
+        dtCheckIn.addPropertyChangeListener(dateListener);
+        dtCheckOut.addPropertyChangeListener(dateListener);
+    }
+
+    private void addRoomChangeListener() {
+        cboroom.addActionListener(evt -> updateDepositAmount());
+    }
+
+    private void updateDepositAmount() {
+        String roomSelection = (String) cboroom.getSelectedItem();
+        LocalDate startDate = dtCheckIn.getDate() != null
+                ? dtCheckIn.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+        LocalDate endDate = dtCheckOut.getDate() != null
+                ? dtCheckOut.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+
+        if (roomSelection == null || roomSelection.equals("Select Room")
+                || roomSelection.equals("Select valid dates to check availability")
+                || startDate == null || endDate == null || startDate.isAfter(endDate)) {
+            txtdepositAmount.setText("");
+            return;
+        }
+
+        try {
+            String roomNumber = roomSelection.split(" - ")[0];
+            Room room = hotelManager.getRooms().stream()
+                    .filter(r -> r.getRoomNumber().equals(roomNumber))
+                    .findFirst()
+                    .orElse(null);
+            if (room == null) {
+                txtdepositAmount.setText("");
+                return;
+            }
+
+            long days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
+            if (days == 0) {
+                days = 1; // Minimum 1 day for same-day bookings
+            }
+            double totalCost = room.getPrice() * days;
+            double deposit = 0.2 * totalCost;
+            txtdepositAmount.setText(String.format("%.2f", deposit));
+        } catch (Exception e) {
+            txtdepositAmount.setText("");
+            System.out.println("Error calculating deposit: " + e.getMessage());
+        }
     }
 
     private void initializeBookingTable() {
-        tableModel = new DefaultTableModel(new Object[]{"Name", "Room Number", "Booking Date","Check-Out Date", "Status"}, 0) {
+        tableModel = new DefaultTableModel(new Object[]{"Name", "Room Number", "Booking Date", "Check-Out Date", "Status"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -154,8 +200,8 @@ public class BookingPanel extends javax.swing.JPanel {
         jLabel10 = new javax.swing.JLabel();
         jLabel11 = new javax.swing.JLabel();
         txtdepositAmount = new javax.swing.JTextField();
-        dtbooking = new com.toedter.calendar.JDateChooser();
-        dtcheckout = new com.toedter.calendar.JDateChooser();
+        dtCheckIn = new com.toedter.calendar.JDateChooser();
+        dtCheckOut = new com.toedter.calendar.JDateChooser();
         jPanel2 = new javax.swing.JPanel();
         jPanel5 = new javax.swing.JPanel();
         jLabel5 = new javax.swing.JLabel();
@@ -250,7 +296,7 @@ public class BookingPanel extends javax.swing.JPanel {
 
         jLabel9.setFont(new java.awt.Font("Century Gothic", 1, 16)); // NOI18N
         jLabel9.setForeground(new java.awt.Color(102, 102, 102));
-        jLabel9.setText("Booking Date:");
+        jLabel9.setText("Check-In Date:");
         jPanel1.add(jLabel9, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 190, 170, 30));
 
         jLabel10.setFont(new java.awt.Font("Century Gothic", 1, 16)); // NOI18N
@@ -266,8 +312,8 @@ public class BookingPanel extends javax.swing.JPanel {
         txtdepositAmount.setFont(new java.awt.Font("Segoe UI", 0, 15)); // NOI18N
         txtdepositAmount.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jPanel1.add(txtdepositAmount, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 340, 500, 33));
-        jPanel1.add(dtbooking, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 220, 500, 30));
-        jPanel1.add(dtcheckout, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 280, 500, 30));
+        jPanel1.add(dtCheckIn, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 220, 500, 30));
+        jPanel1.add(dtCheckOut, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 280, 500, 30));
 
         panel_load.add(jPanel1);
         jPanel1.setBounds(16, 140, 540, 450);
@@ -593,6 +639,8 @@ public class BookingPanel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnbookingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnbookingActionPerformed
+       
+
         try {
             // Get selected customer
             String customerSelection = (String) cbocustomer.getSelectedItem();
@@ -618,10 +666,10 @@ public class BookingPanel extends javax.swing.JPanel {
                     .orElseThrow(() -> new IllegalArgumentException("Room not found."));
 
             // Get dates
-            LocalDate startDate = dtbooking.getDate() != null
-                    ? dtbooking.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
-            LocalDate endDate = dtcheckout.getDate() != null
-                    ? dtcheckout.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+            LocalDate startDate = dtCheckIn.getDate() != null
+                    ? dtCheckIn.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
+            LocalDate endDate = dtCheckOut.getDate() != null
+                    ? dtCheckOut.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
             if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
                 throw new IllegalArgumentException("Invalid booking or check-out date.");
             }
@@ -644,30 +692,29 @@ public class BookingPanel extends javax.swing.JPanel {
             }
             long days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
             if (days == 0) {
-                days = 1; // Ensure at least 1 day for same-day bookings
+                days = 1; // Minimum 1 day for same-day bookings
             }
             double expectedDeposit = 0.2 * room.getPrice() * days;
-            if (deposit < expectedDeposit) {
-                throw new IllegalArgumentException("Deposit must be at least 20% of total cost ($" + expectedDeposit + ").");
+            if (Math.abs(deposit - expectedDeposit) > 0.01) {
+                throw new IllegalArgumentException("Deposit must be exactly 20% of total cost ($" + String.format("%.2f", expectedDeposit) + ").");
             }
 
             // Create booking
             String bookingId = "B" + (hotelManager.getBookings().size() + 1);
             Booking booking = new Booking(bookingId, customer, room, startDate, endDate, deposit);
-            hotelManager.addBooking(booking);
+            hotelManager.addBooking(booking); // Deposit recorded as income in addBooking
 
             JOptionPane.showMessageDialog(this, "Booking added successfully! Booking ID: " + bookingId);
             refreshBookingTable();
             populateCustomerComboBox();
             updateRoomComboBox();
-            dtbooking.setDate(null);
-            dtcheckout.setDate(null);
+            dtCheckIn.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(1)));
+            dtCheckOut.setDate(java.sql.Date.valueOf(LocalDate.now().plusDays(2)));
             txtdepositAmount.setText("");
 
-            // Refresh RoomPanel table
-            if (roomPanel != null) {
-                roomPanel.refreshRoomTable(null);
-            }
+            // Navigate to IncomePanel to show updated records
+            IncomePanel inc = new IncomePanel(hotelManager);
+            jpload.jPanelLoader(panel_load, inc);
 
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this, "Error: " + e.getMessage(), "Booking Error", JOptionPane.ERROR_MESSAGE);
@@ -718,8 +765,8 @@ public class BookingPanel extends javax.swing.JPanel {
     private javax.swing.JButton btnbooking;
     private javax.swing.JComboBox<String> cbocustomer;
     private javax.swing.JComboBox<String> cboroom;
-    private com.toedter.calendar.JDateChooser dtbooking;
-    private com.toedter.calendar.JDateChooser dtcheckout;
+    private com.toedter.calendar.JDateChooser dtCheckIn;
+    private com.toedter.calendar.JDateChooser dtCheckOut;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;

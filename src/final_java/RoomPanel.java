@@ -19,15 +19,13 @@ import javax.swing.table.DefaultTableModel;
  * @author LONGMENG
  */
 public class RoomPanel extends javax.swing.JPanel {
-
-    private JpanelLoader jpload = new JpanelLoader();
+private JpanelLoader jpload = new JpanelLoader();
     private DefaultTableModel model;
     private HotelManager hotelManager;
 
-    public RoomPanel(HotelManager hotelManager1) {
+    public RoomPanel(HotelManager hotelManager) {
+        this.hotelManager = hotelManager;
         initComponents();
-        hotelManager = HotelManager.getInstance();
-
         model = new DefaultTableModel(new Object[]{"Room Number", "Room Type", "Status", "Price"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -42,12 +40,13 @@ public class RoomPanel extends javax.swing.JPanel {
                     : null;
             refreshRoomTable(selectedDate);
         });
-        refreshRoomTable(null);
+        refreshRoomTable(null); // Initialize with today's status
     }
 
     private void clearForm() {
         txtprice.setText("");
         cboType.setSelectedIndex(0);
+        txtnumber.setText("");
     }
 
     public void refreshRoomTable(LocalDate filterDate) {
@@ -66,9 +65,18 @@ public class RoomPanel extends javax.swing.JPanel {
 
         for (Room room : roomsToDisplay) {
             String status = "Available";
-            Booking booking = hotelManager.findBookingByRoom(room, dateToCheck);
-            if (booking != null) {
-                status = booking.isCheckedIn() ? "Unavailable" : "Booked";
+            // Check all bookings for the room
+            for (Booking booking : hotelManager.getBookings()) {
+                if (booking.getRoom().equals(room)) {
+                    // Check if the booking overlaps with the selected date
+                    LocalDate bookingStart = booking.getStartDate();
+                    LocalDate bookingEnd = booking.getEndDate();
+                    if (!dateToCheck.isBefore(bookingStart) && !dateToCheck.isAfter(bookingEnd)) {
+                        // Booking is active on the selected date
+                        status = booking.isCheckedIn() ? "Unavailable" : "Booked";
+                        break; // No need to check other bookings for this room
+                    }
+                }
             }
             System.out.println("Room: " + room.getRoomNumber() + ", Date: " + dateToCheck + ", Status: " + status);
             model.addRow(new Object[]{
@@ -555,7 +563,9 @@ public class RoomPanel extends javax.swing.JPanel {
             // Create and add room
             Room room = new Room(roomNumber, roomType, price, true);
             hotelManager.addRoom(room);
-            refreshRoomTable(null);
+            refreshRoomTable(dtfilter.getDate() != null
+                    ? dtfilter.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+                    : null);
             clearForm();
             JOptionPane.showMessageDialog(this, "Room added successfully!");
         } catch (IllegalArgumentException e) {

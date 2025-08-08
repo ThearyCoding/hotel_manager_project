@@ -5,7 +5,7 @@
 package final_java;
 
 import final_java.models.HotelManager;
-import final_java.models.HotelManager.IncomeRecord;
+import final_java.models.IncomeRecord;
 import java.text.DecimalFormat;
 import javax.swing.table.DefaultTableModel;
 
@@ -14,6 +14,7 @@ import javax.swing.table.DefaultTableModel;
  * @author LONGMENG
  */
 public class IncomePanel extends javax.swing.JPanel {
+
     JpanelLoader jpload = new JpanelLoader();
     HotelManager hotelManager;
 
@@ -23,23 +24,32 @@ public class IncomePanel extends javax.swing.JPanel {
         populateIncomeTable();
     }
 
-    private void populateIncomeTable() {
-        DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
-        model.setRowCount(0); // Clear existing rows
-
-        for (IncomeRecord record : hotelManager.getIncomeRecords()) {
-            model.addRow(new Object[]{
-                record.getCustomerName(),
-                record.getRoomNumber(),
-                record.getRoomType(),
-                String.format("$%.2f", record.getAmount())
-            });
+   private void populateIncomeTable() {
+    DefaultTableModel model = new DefaultTableModel(
+        new Object[]{"Customer Name", "Room Number", "Room Type", "Amount", "Date", "Status"}, 0
+    ) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
         }
+    };
+    jTable1.setModel(model);
 
-        double totalIncome = hotelManager.getTotalIncome();
-        DecimalFormat df = new DecimalFormat("$#,##0.00");
-        jLabel8.setText(df.format(totalIncome));
+    for (IncomeRecord record : hotelManager.getIncomeRecords()) {
+        model.addRow(new Object[]{
+            record.getCustomerName(),
+            record.getRoomNumber(),
+            record.getRoomType(),
+            String.format("$%.2f", record.getAmount()),
+            record.getDate().toString(),
+            record.getStatus()
+        });
     }
+
+    double totalIncome = hotelManager.getTotalIncome();
+    DecimalFormat df = new DecimalFormat("$#,##0.00");
+    jLabel8.setText(df.format(totalIncome));
+}
 
     /**
      * This method is called from within the constructor to initialize the form.

@@ -2,6 +2,17 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group/>
+        <group>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/CheckOutPanel.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/models/IncomeRecord.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/CheckInPanel.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/models/Booking.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/RoomPanel.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/IncomePanel.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/Guest_House.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/models/Room.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/models/HotelManager.java</file>
+            <file>file:/C:/Users/MSI/Documents/NetBeansProjects/Final_Java/src/final_java/BookingPanel.java</file>
+        </group>
     </open-files>
 </project-private>
